@@ -32,6 +32,20 @@ export const addPatientConsultancyRecords = async (req, res) => {
   }
 };
 
+// Get logged in doctors patients   =>   /api/patient/me
+export const myPatients = async (req, res, next) => {
+  try {
+    const patients = await Patient.find({
+      'consultancy.doctorInfo': req.user._id,
+    })
+      .populate('consultancy.doctorInfo', '_id name')
+      .exec();
+    res.send({ total: patients.length, patients });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 export const getAllActivePatientsQueForConsultancy = async (req, res) => {
   try {
     const pageSize = 10;
@@ -224,5 +238,58 @@ export const PatientPharmacyUnActive = async (req, res) => {
   } catch (err) {
     console.log(err);
     return res.status(400).send({ error: 'Patient  failed to un active' });
+  }
+};
+
+export const getAllPatientsQueForPharmacy = async (req, res) => {
+  try {
+    const pageSize = 10;
+    const page = Number(req.query.pageNumber) || 1;
+
+    const keyword = req.query.keyword
+      ? {
+          name: {
+            $regex: req.query.keyword,
+            $options: 'i',
+          },
+        }
+      : {};
+    const count = await Patient.countDocuments({ ...keyword });
+    const patients = await Patient.find({
+      isActive: true,
+      isPharmacy: true,
+      ...keyword,
+    })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1))
+      .populate('consultancy.doctorInfo', '_id name role username')
+      .select('_id  patientsInfo.firstName opd consultancy patientID')
+      .exec();
+    if (!patients) return res.status(400).send('Patients not found');
+
+    res.send({ page, pages: Math.ceil(count / pageSize), patients });
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({ error: 'Failed to get data' });
+  }
+};
+
+export const getSinglePatientQueForPharmacy = async (req, res) => {
+  try {
+    const { patientID } = req.params;
+    const patient = await Patient.find({
+      patientID,
+      isActive: true,
+      isPharmacy: true,
+    })
+      .populate('consultancy.doctorInfo', '_id name role username')
+      .select('_id  patientsInfo.firstName opd consultancy patientID')
+      .exec();
+    if (!patient) return res.status(400).send('Patient not found');
+
+    res.send(patient);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).send({ error: 'Failed to get data' });
   }
 };

@@ -2,23 +2,9 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const { ObjectId } = mongoose.Schema;
 
-const CartItemSchema = new mongoose.Schema(
-  {
-    drug: { type: ObjectId, ref: 'Drug' },
-    name: String,
-    price: Number,
-    count: Number,
-  },
-  { timestamps: true },
-);
-
-const CartItem = mongoose.model('CartItem', CartItemSchema);
-
 const OrderSchema = new Schema(
   {
-    drugs: [CartItemSchema],
-
-    orderID: {
+    orderId: {
       type: String,
       trim: true,
       max: 32,
@@ -26,28 +12,77 @@ const OrderSchema = new Schema(
       index: true,
       lowercase: true,
     },
+    orderItems: [
+      {
+        name: {
+          type: String,
+          required: true,
+        },
+
+        quantity: {
+          type: Number,
+          required: true,
+        },
+
+        image: {
+          type: String,
+          required: true,
+        },
+
+        price: {
+          type: Number,
+          required: true,
+        },
+
+        drug: {
+          type: ObjectId,
+          ref: 'Drug',
+        },
+      },
+    ],
+
+    itemsPrice: {
+      type: Number,
+      required: true,
+      default: 0.0,
+    },
+
+    taxPrice: {
+      type: Number,
+      required: true,
+      default: 0.0,
+    },
+
+    totalPrice: {
+      type: Number,
+      required: true,
+      default: 0.0,
+    },
+
+    // paymentMethod: {
+    //   type: String,
+    //   required: true,
+    // },
+
+    orderStatus: {
+      type: String,
+      required: true,
+      default: 'Processing',
+    },
+
+    paidAt: {
+      type: Date,
+    },
+
+    user: {
+      type: ObjectId,
+      ref: 'User',
+    },
 
     seller: {
       type: ObjectId,
       ref: 'User',
     },
-
-    buyer: {
-      type: ObjectId,
-      ref: 'Patient',
-    },
-
-    orderDate: {
-      type: Date,
-      default: Date.now,
-    },
-
-    drugs: {
-      type: Array,
-      default: [],
-    },
-
-    totalPrice: { type: Number },
   },
 
   { timestamps: true },

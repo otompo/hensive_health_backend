@@ -35,14 +35,9 @@ const drugSchema = new Schema(
       type: Date,
       require: true,
     },
-
-    quantity: {
+    stock: {
       type: Number,
       required: true,
-    },
-
-    sold: {
-      type: Number,
       default: 0,
     },
 

@@ -11,6 +11,7 @@ import {
   PatientEmergencyUnActive,
   PatientPharmacyUnActive,
   getAllActivePatientsQueForConsultancy,
+  myPatients,
 } from '../controllers/consultancyController';
 import { isAuth, doctorMiddleware } from '../middlewares';
 
@@ -29,6 +30,8 @@ router
 router
   .route('/patient/consultancy/:patientID')
   .post(isAuth, doctorMiddleware, addPatientConsultancyRecords);
+
+router.route('/patients/me').get(isAuth, doctorMiddleware, myPatients);
 
 // ***********************************Active*********************************************************
 router

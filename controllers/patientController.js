@@ -59,22 +59,20 @@ export const getAllPatients = async (req, res) => {
   try {
     const pageSize = 10;
     const page = Number(req.query.pageNumber) || 1;
-    const count = await Patient.count({});
-    const patients = await Patient.find({})
-      .populate('createdBy', '_id name')
-      .populate('consultancy.doctorInfo', '_id name role username')
-      .populate('opd.nurseInfo', '_id name role username')
-      .sort({ createdAt: -1 })
-      .skip(pageSize * (page - 1))
+
+    const keyword = req.query.keyword
+      ? {
+          name: {
+            $regex: req.query.keyword,
+            $options: 'i',
+          },
+        }
+      : {};
+    const count = await Patient.countDocuments({ ...keyword });
+    const patients = await Patient.find({ ...keyword })
       .limit(pageSize)
-      .exec();
-    if (!patients) return res.status(400).send('Patients not found');
-    res.send({
-      total: patients.length,
-      page,
-      pages: Math.ceil(count / pageSize),
-      patients,
-    });
+      .skip(pageSize * (page - 1));
+    res.json({ page, pages: Math.ceil(count / pageSize), patients });
   } catch (err) {
     console.log(err.message);
   }

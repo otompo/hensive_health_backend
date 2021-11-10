@@ -3,7 +3,9 @@ import { addUser } from '../controllers/authController';
 import {
   addPatientConsultancyRecords,
   getAllActivePatientsQueForConsultancy,
+  getAllPatientsQueForPharmacy,
   getSinglePatientConsultancyRecords,
+  getSinglePatientQueForPharmacy,
   PatientAdmittedActive,
   PatientAdmittedUnActive,
   PatientEmergencyActive,
@@ -13,10 +15,30 @@ import {
   PatientPharmacyActive,
 } from '../controllers/consultancyController';
 import {
+  aboutToOutofStock,
+  createDrug,
+  getAllAboutToExpire,
+  getAllDrugs,
+  getAllDrugsOutOfStock,
+  getAllExpiredDrugs,
+  getSingleDrug,
+  resizeImage,
+  updateDrug,
+  uploadImage,
+} from '../controllers/drugsController';
+import {
   addOPDPatientRecords,
   getAllActivePatientsQueForOPD,
   getSinglePatientOPDRecords,
 } from '../controllers/opdController';
+import {
+  allOrders,
+  createOrder,
+  deleteOrder,
+  getSingleOrder,
+  myOrders,
+  updateOrder,
+} from '../controllers/orderController';
 import {
   getAllPatients,
   getSingleActivePatient,
@@ -90,7 +112,7 @@ router
   .put(isAuth, adminMiddleware, removeAsNurse);
 router.route('/users').get(isAuth, adminMiddleware, getAllStaff);
 
-// User Stass
+// User Stass routes
 router.route('/users/stass').get(isAuth, adminMiddleware, userstats);
 
 /**
@@ -114,6 +136,13 @@ router
   .put(isAuth, adminMiddleware, makePatientUnActive);
 router.route('/patient').post(isAuth, adminMiddleware, registerPatient);
 
+// pharmacist routes
+router
+  .route('/patients/pharmacy/que')
+  .get(isAuth, adminMiddleware, getAllPatientsQueForPharmacy);
+router
+  .route('/patient/pharmacy/:patientID')
+  .get(isAuth, adminMiddleware, getSinglePatientQueForPharmacy);
 /**
  OPD
  */
@@ -178,5 +207,33 @@ router
 router
   .route('/patient/consultancy/:patientID/emergency')
   .put(isAuth, adminMiddleware, PatientEmergencyUnActive);
+
+// drugs routes
+router.route('/drug').post(isAuth, createDrug);
+
+router
+  .route('/drug/:drugID')
+  .patch(isAuth, adminMiddleware, uploadImage, resizeImage, updateDrug);
+router.route('/drug/:drugID').get(isAuth, getSingleDrug);
+router.route('/drugs').get(isAuth, getAllDrugs);
+
+router
+  .route('/drugs/abouttoexpired')
+  .get(isAuth, adminMiddleware, getAllAboutToExpire);
+router.route('/drugs/expired').get(isAuth, adminMiddleware, getAllExpiredDrugs);
+router
+  .route('/drugs/outofstock')
+  .get(isAuth, adminMiddleware, getAllDrugsOutOfStock);
+router
+  .route('/drugs/abouttooutofstock')
+  .get(isAuth, adminMiddleware, aboutToOutofStock);
+
+// orders routes
+router.route('/order').post(isAuth, adminMiddleware, createOrder);
+router.route('/order/:orderId').get(isAuth, adminMiddleware, getSingleOrder);
+router.route('/orders').get(isAuth, adminMiddleware, allOrders);
+router.route('/orders/me').get(isAuth, adminMiddleware, myOrders);
+router.route('/order/:id').put(isAuth, adminMiddleware, updateOrder);
+router.route('/order/:id').delete(isAuth, adminMiddleware, deleteOrder);
 
 module.exports = router;

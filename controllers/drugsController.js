@@ -45,8 +45,8 @@ const filterObj = (obj, ...allowedFields) => {
 export const createDrug = async (req, res) => {
   try {
     let drugID = shortId.generate();
-    const { name, description, price, expireDate, quantity } = req.body;
-    if (!name || !description || !expireDate || !price || !quantity)
+    const { name, description, price, expireDate, stock } = req.body;
+    if (!name || !description || !expireDate || !price || !stock)
       return res.status(400).send('all fileds are required');
     const drug = await new Drug({
       drugID,
@@ -54,7 +54,7 @@ export const createDrug = async (req, res) => {
       name,
       description,
       price,
-      quantity,
+      stock,
       expireDate: new Date(expireDate),
     }).save();
     res.send(drug);
@@ -74,16 +74,17 @@ export const updateDrug = async (req, res) => {
       'drugID',
       'description',
       'price',
-      'quantity',
+      'stock',
       'expireDate',
     );
 
     if (req.file) filteredBody.image = req.file.filename;
     const { drugID } = req.params;
-    
+
     const drug = await Drug.findOneAndUpdate({ drugID }, filteredBody, {
       new: true,
     }).exec();
+
     if (!drug) return res.status(400).send('Drug was found');
     res.send(drug);
   } catch (err) {
@@ -94,9 +95,25 @@ export const updateDrug = async (req, res) => {
 
 export const getAllDrugs = async (req, res) => {
   try {
-    const drugs = await Drug.find({}).sort({ createdAt: -1 }).exec();
+    const pageSize = 10;
+    const page = Number(req.query.pageNumber) || 1;
+
+    const keyword = req.query.keyword
+      ? {
+          name: {
+            $regex: req.query.keyword,
+            $options: 'i',
+          },
+        }
+      : {};
+    const count = await Drug.countDocuments({ ...keyword });
+    const drugs = await Drug.find({ ...keyword })
+      .sort({ createdAt: -1 })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1))
+      .exec();
     if (!drugs) return res.status(400).send("Couldn't fine drugs");
-    res.send(drugs);
+    res.send({ page, pages: Math.ceil(count / pageSize), drugs });
   } catch (err) {
     console.log(err);
     return res.status(400).send('filed to fetch drugs');
@@ -115,3 +132,111 @@ export const getSingleDrug = async (req, res) => {
   }
 };
 
+export const getAllDrugsOutOfStock = async (req, res, next) => {
+  try {
+    const pageSize = 10;
+    const page = Number(req.query.pageNumber) || 1;
+
+    const keyword = req.query.keyword
+      ? {
+          name: {
+            $regex: req.query.keyword,
+            $options: 'i',
+          },
+        }
+      : {};
+    const count = await Drug.countDocuments({ ...keyword });
+    const drugs = await Drug.find({
+      $expr: { $lte: [{ $toDouble: '$stock' }, 1.0] },
+      ...keyword,
+    })
+      .sort({ createdAt: -1 })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1))
+      .exec();
+
+    if (!drugs) return res.status(404).send('Drugs not found');
+    res.send({ page, pages: Math.ceil(count / pageSize), drugs });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const aboutToOutofStock = async (req, res, next) => {
+  try {
+    const pageSize = +req.query.pagesize;
+    const currentPage = +req.query.page;
+    const drugsQuery = Drug.find({
+      $and: [
+        { $expr: { $lte: [{ $toDouble: '$stock' }, 15.0] } },
+        { $expr: { $gte: [{ $toDouble: '$stock' }, 1.0] } },
+      ],
+    });
+    if (pageSize && currentPage) {
+      drugsQuery.skip(pageSize * (currentPage - 1)).limit(pageSize);
+    }
+    drugsQuery.then((drugs) => {
+      res.status(200).json({
+        total: drugs.length,
+        data: drugs,
+      });
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const getAllExpiredDrugs = async (req, res, next) => {
+  try {
+    const pageSize = 10;
+    const page = Number(req.query.pageNumber) || 1;
+
+    const keyword = req.query.keyword
+      ? {
+          name: {
+            $regex: req.query.keyword,
+            $options: 'i',
+          },
+        }
+      : {};
+    const count = await Drug.countDocuments({ ...keyword });
+
+    const drugs = await Drug.find({
+      expireDate: { $lte: new Date() },
+      ...keyword,
+    })
+      .sort({ createdAt: -1 })
+      .limit(pageSize)
+      .skip(pageSize * (page - 1))
+      .exec();
+    if (!drugs) return res.status(404).send('Drugs not found');
+    res.send({
+      total: drugs.length,
+      page,
+      pages: Math.ceil(count / pageSize),
+      drugs,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const getAllAboutToExpire = async (req, res, next) => {
+  try {
+    const pageSize = +req.query.pagesize;
+    const currentPage = +req.query.page;
+    var date = new Date();
+    var date10 = new Date(date.getTime());
+    date10.setDate(date10.getDate() + 10);
+    const drugQuery = await Drug.find({
+      expireDate: { $lte: new Date(date10), $gte: new Date() },
+    });
+
+    if (pageSize && currentPage) {
+      drugQuery.skip(pageSize * (currentPage - 1)).limit(pageSize);
+    }
+    res.send({ total: drugQuery.length, drugQuery });
+  } catch (err) {
+    console.log(err);
+  }
+};
