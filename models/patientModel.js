@@ -19,7 +19,7 @@ const consultancySchema = new Schema(
     // name: { type: String, required: true },
     complain: {
       type: {},
-      // required: true,
+      required: true,
       trim: true,
     },
     prescription: {
@@ -48,7 +48,7 @@ const labTestResultSchema = new Schema(
     },
     results: {
       type: {},
-      // required: true,
+      required: true,
       trim: true,
     },
     createdBy: {
@@ -95,27 +95,27 @@ const opdSchema = new Schema(
     weight: {
       type: Number,
       trim: true,
-      //   required: true,
+      required: true,
     },
     temperature: {
       type: Number,
       trim: true,
-      //   required: true,
+      required: true,
     },
     pulse: {
       type: Number,
       trim: true,
-      //   required: true,
+      required: true,
     },
     respiratoryRate: {
       type: String,
       trim: true,
-      //   required: true,
+      required: true,
     },
     bloodPressure: {
       type: String,
       trim: true,
-      //   required: true,
+      required: true,
     },
     nurseInfo: {
       type: ObjectId,
