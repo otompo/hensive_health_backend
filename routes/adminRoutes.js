@@ -73,7 +73,7 @@ const router = express.Router();
  */
 router
   .route('/user')
-  .post(isAuth, adminMiddleware, userSignupValidator, addUser);
+  .post(userSignupValidator, addUser);
 
 /**
  user routes
